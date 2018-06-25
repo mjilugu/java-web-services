@@ -33,6 +33,7 @@ public class ClientHandlerResolver implements HandlerResolver {
 
   public List<Handler> getHandlerChain(PortInfo portInfo) {
     List<Handler> handlerChain = new ArrayList<Handler>();
+    handlerChain.add(new IdHandler());
     handlerChain.add(new ClientHashHandler(this.name, this.key));
     return handlerChain;
   }
@@ -127,5 +128,71 @@ class clientHashHandler implements SOAPHandler<SOAPMessageContext> {
       return str.getBytes("UTF-8");
     }
     catch(Exception e) { throw new RuntimeException(e); }
+  }
+}
+
+class IdHandler implements LogicalHandler<LogicalMessageContext> {
+  public void close (MessageContext mctx) {
+
+  }
+
+  public boolean handleFault(LogicalMessageContext lmctx) {
+    return true;
+  }
+
+  public boolean handleMessage(LogicalMessageContext lmctx) {
+    Boolean outbound = (Boolean) lmctx.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+    if (outbound) {
+      LogicalMessage msg = lmctx.getMessage();
+      try {
+        JAXBContext jaxbCtx = JAXBContext.newInstance("clientSOAP");
+        Object payload = msg.getPayload(jaxbCtx);
+        // Check payload to be sure it's what we want
+        if (payload instanceof JAXBElement) {
+          Object value = ((JAXBElement) payload).getValue();
+          // Three possibilities of interest: GetOne, Edit or Delete
+          int id = 0;
+          boolean getOne, edit, delete;
+          getOne = edit = delete = false;
+          if (value.toString().contains("GetOne")) {
+            id = ((GetOne) value).getArg0();
+            getOne = true;
+          }
+          else if (value.toString().contains("Edit")) {
+            id = ((Edit) value).getArg0();
+            edit = true;
+          }
+          else if (value.toString().contains("Delete")) {
+            id = ((Delete) value).getArg0();
+            delete = true;
+          }
+          else {
+            return true;  // GetAll or Create
+          }
+
+          // if id > 0, there is no problem to fix on the client side.
+          if (id > 0) return true;
+          if (getOne || edit || delete) {
+            if (id == 0) { // can't fix
+              throw new RuntimeException("ID cannot be zero!");
+            }
+            // id < 0 and operation is GetOne, Edit or Delete
+            int newId = Math.abs(id);
+            // Update argument.
+            if (getOne) ((GetOne) value).setArg0(newId);
+            else if (edit) ((Edit) value).setArg0(newId);
+            else if (delete) ((Delete) value).setArg0(newId);
+            // Update Payload.
+            ((JAXBElement) payload).setValue(value);
+            // Update Message.
+            msg.setPayload(payload, jaxbCtx);
+          }
+        }
+      }
+      catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return true;
   }
 }
