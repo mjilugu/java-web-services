@@ -1,0 +1,27 @@
+plugins {
+  id 'war'
+  /* id 'java' */
+}
+
+task fullJar (type: Jar) {
+  manifest {
+    attributes 'Implementation-Title': 'Rand','Implementation-Version':'1.1',
+      'Main-Class':'rand.RandPublisher'
+  }
+  baseName = project.name + '-all'
+  from {
+    configurations.compile.collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  }
+  with jar
+}
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  // https://mvnrepository.com/artifact/com.sun.xml.ws/webservices-rt
+  compile group: 'com.sun.xml.ws', name: 'webservices-rt', version: '2.1-b16'
+}

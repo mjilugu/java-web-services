@@ -1,0 +1,12 @@
+plugins {
+  id 'war'
+}
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  // https://mvnrepository.com/artifact/com.sun.xml.ws/webservices-rt
+  compile group: 'com.sun.xml.ws', name: 'webservices-rt', version: '2.1-b16'
+}
