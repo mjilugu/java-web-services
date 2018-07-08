@@ -1,5 +1,21 @@
 package images;
 
+import javax.jws.WebService;
+import javax.jws.WebMethod;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.awt.Image;
+import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.ImageReader;
+
 @WebService
 public class SkiImageService {
   private Map<String, String> photos;
